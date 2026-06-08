@@ -15,15 +15,26 @@ func (cfg apiConfig) ensureAssetsDir() error {
 }
 
 func (cfg apiConfig) getAssetPath(videoID string, fileHeader *multipart.FileHeader) (string, error) {
-	fileExtension := path.Ext(fileHeader.Filename)
-	if fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png" {
-		return "", fmt.Errorf("unsupported file type: %s", fileExtension)
+	fileExtension, err := getFileExtension(fileHeader.Filename)
+	if err != nil {
+		return "", err
 	}
 	fileName := fmt.Sprintf("%s%s", videoID, fileExtension)
 	return path.Join(cfg.assetsRoot, fileName), nil
 }
 
 func (cfg apiConfig) getAssetURL(videoID string, fileHeader *multipart.FileHeader) string {
-	mediaType := fileHeader.Header.Get("Content-Type")
-	return fmt.Sprintf("http://localhost:%s/assets/%s.%s", cfg.port, videoID, mediaType)
+	fileExtension, err := getFileExtension(fileHeader.Filename)
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("http://localhost:%s/assets/%s%s", cfg.port, videoID, fileExtension)
+}
+
+func getFileExtension(filename string) (string, error) {
+	fileExtension := path.Ext(filename)
+	if fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png" {
+		return "", fmt.Errorf("unsupported file type: %s", fileExtension)
+	}
+	return fileExtension, nil
 }
