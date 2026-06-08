@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"mime/multipart"
 	"os"
+	"path"
 )
 
 func (cfg apiConfig) ensureAssetsDir() error {
@@ -9,4 +12,15 @@ func (cfg apiConfig) ensureAssetsDir() error {
 		return os.Mkdir(cfg.assetsRoot, 0755)
 	}
 	return nil
+}
+
+func (cfg apiConfig) getAssetPath(videoID string, fileHeader *multipart.FileHeader) string {
+	fileExtension := path.Ext(fileHeader.Filename)
+	fileName := fmt.Sprintf("%s%s", videoID, fileExtension)
+	return path.Join(cfg.assetsRoot, fileName)
+}
+
+func (cfg apiConfig) getAssetURL(videoID string, fileHeader *multipart.FileHeader) string {
+	mediaType := fileHeader.Header.Get("Content-Type")
+	return fmt.Sprintf("http://localhost:%s/assets/%s.%s", cfg.port, videoID, mediaType)
 }
