@@ -74,15 +74,13 @@
         <div id="video-upload-forms">
           <form
             id="thumbnail-upload-form"
-            onsubmit="event.preventDefault(); uploadThumbnail(currentVideo?.id)"
+            onsubmit="
+              event.preventDefault();
+              uploadThumbnail(currentVideo?.id);
+            "
           >
             <h3>Update Thumbnail</h3>
-            <input
-              type="file"
-              id="thumbnail"
-              accept="image/*,application/pdf"
-              required
-            />
+            <input type="file" id="thumbnail" accept="image/*" required />
             <button type="submit" id="upload-thumbnail-btn">Upload</button>
             <img id="thumbnail-image" style="display: block" />
           </form>
@@ -90,7 +88,10 @@
           <div id="video-container">
             <form
               id="video-file-upload-form"
-              onsubmit="event.preventDefault(); uploadVideoFile(currentVideo?.id)"
+              onsubmit="
+                event.preventDefault();
+                uploadVideoFile(currentVideo?.id);
+              "
             >
               <h3>Update Video File</h3>
               <input type="file" id="video-file" accept="video/*" required />
