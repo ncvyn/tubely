@@ -47,7 +47,11 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	}
 	defer file.Close()
 
-	assetPath := cfg.getAssetPath(videoIDString, fileHeader)
+	assetPath, err := cfg.getAssetPath(videoIDString, fileHeader)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid file type", err)
+		return
+	}
 
 	dst, err := os.Create(assetPath)
 	if err != nil {
