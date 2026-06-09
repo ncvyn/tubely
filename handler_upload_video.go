@@ -98,16 +98,16 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	fileExtension := path.Ext(fileHeader.Filename)
-	videoPath := fmt.Sprintf("%s/%s%s", prefix, hex.EncodeToString(rand32), fileExtension)
+	videoKey := fmt.Sprintf("%s/%s%s", prefix, hex.EncodeToString(rand32), fileExtension)
 
 	cfg.s3Client.PutObject(r.Context(), &s3.PutObjectInput{
 		Bucket:      &cfg.s3Bucket,
-		Key:         &videoPath,
+		Key:         &videoKey,
 		Body:        tempFile,
 		ContentType: &mediatype,
 	})
 
-	url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", cfg.s3Bucket, cfg.s3Region, videoPath)
+	url := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", cfg.s3Bucket, cfg.s3Region, videoKey)
 	video.VideoURL = &url
 	err = cfg.db.UpdateVideo(video)
 	if err != nil {
