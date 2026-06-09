@@ -2,7 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os/exec"
+	"strconv"
+	"strings"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
@@ -117,4 +121,40 @@ func (cfg *apiConfig) handlerVideosRetrieve(w http.ResponseWriter, r *http.Reque
 	}
 
 	respondWithJSON(w, http.StatusOK, videos)
+}
+
+func (cfg *apiConfig) getVideoAspectRatio(filepath string) (string, error) {
+	output, err := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0", filepath).Output()
+	if err != nil {
+		return "", err
+	}
+	parts := strings.Split(strings.TrimSpace(string(output)), "x")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("unexpected ffprobe output format")
+	}
+	w, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return "", err
+	}
+	h, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return "", err
+	}
+
+	gcd := func(a, b int) int {
+		for b != 0 {
+			a, b = b, a%b
+		}
+		return a
+	}
+	g := gcd(w, h)
+	ratio := fmt.Sprintf("%d:%d", w/g, h/g)
+	switch ratio {
+	case "16:9":
+		return "16:9", nil
+	case "9:16":
+		return "9:16", nil
+	default:
+		return "other", nil
+	}
 }
