@@ -2,12 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"os/exec"
-	"path"
-	"strconv"
-	"strings"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
@@ -122,39 +117,4 @@ func (cfg *apiConfig) handlerVideosRetrieve(w http.ResponseWriter, r *http.Reque
 	}
 
 	respondWithJSON(w, http.StatusOK, videos)
-}
-
-func (cfg *apiConfig) getVideoAspectRatioPrefix(filepath string) (string, error) {
-	output, err := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0", filepath).Output()
-	if err != nil {
-		return "", err
-	}
-	parts := strings.Split(strings.TrimSpace(string(output)), "x")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("unexpected ffprobe output format")
-	}
-	w, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return "", err
-	}
-	h, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return "", err
-	}
-
-	if w > h {
-		return "landscape", nil
-	} else if w < h {
-		return "portrait", nil
-	}
-	return "other", nil
-}
-
-func processVideoForFastStart(filePath string) (string, error) {
-	outputPath := strings.TrimSuffix(filePath, path.Ext(filePath)) + ".processed.mp4"
-	err := exec.Command("ffmpeg", "-i", filePath, "-c", "copy", "-movflags", "faststart", "-f", "mp4", outputPath).Run()
-	if err != nil {
-		return "", err
-	}
-	return outputPath, nil
 }
