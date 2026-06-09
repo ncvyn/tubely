@@ -148,3 +148,12 @@ func (cfg *apiConfig) getVideoAspectRatioPrefix(filepath string) (string, error)
 	}
 	return "other", nil
 }
+
+func processVideoForFastStart(filePath string) (string, error) {
+	outputPath := filePath + ".processing"
+	err := exec.Command("ffmpeg", "-i", filePath, "-c", "copy", "-movflags", "faststart", "-f", "mp4", outputPath).Run()
+	if err != nil {
+		return "", err
+	}
+	return outputPath, nil
+}
