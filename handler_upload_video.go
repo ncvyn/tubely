@@ -100,10 +100,23 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 	fileExtension := path.Ext(fileHeader.Filename)
 	videoKey := fmt.Sprintf("%s/%s%s", prefix, hex.EncodeToString(rand32), fileExtension)
 
+	processedVideo, err := processVideoForFastStart(tempFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't process video for fast start", err)
+		return
+	}
+	defer os.Remove(processedVideo)
+	processedVideoFile, err := os.Open(processedVideo)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't open processed video", err)
+		return
+	}
+	defer processedVideoFile.Close()
+
 	cfg.s3Client.PutObject(r.Context(), &s3.PutObjectInput{
 		Bucket:      &cfg.s3Bucket,
 		Key:         &videoKey,
-		Body:        tempFile,
+		Body:        processedVideoFile,
 		ContentType: &mediatype,
 	})
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 
@@ -150,7 +151,7 @@ func (cfg *apiConfig) getVideoAspectRatioPrefix(filepath string) (string, error)
 }
 
 func processVideoForFastStart(filePath string) (string, error) {
-	outputPath := filePath + ".processing"
+	outputPath := strings.TrimSuffix(filePath, path.Ext(filePath)) + ".processed.mp4"
 	err := exec.Command("ffmpeg", "-i", filePath, "-c", "copy", "-movflags", "faststart", "-f", "mp4", outputPath).Run()
 	if err != nil {
 		return "", err
