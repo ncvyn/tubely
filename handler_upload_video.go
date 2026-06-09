@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -13,11 +12,9 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
-	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -126,13 +123,8 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		ContentType: &mediatype,
 	})
 
-	url := fmt.Sprintf("%s,%s", cfg.s3Bucket, videoKey)
+	url := fmt.Sprintf("https://%s/%s", cfg.s3CfDistribution, videoKey)
 	video.VideoURL = &url
-	video, err = cfg.dbVideoToSignedVideo(video)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't generate signed URL for video", err)
-		return
-	}
 	err = cfg.db.UpdateVideo(video)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't update video in database with URL", err)
@@ -173,36 +165,4 @@ func processVideoForFastStart(filePath string) (string, error) {
 		return "", err
 	}
 	return outputPath, nil
-}
-
-func generatePresignedURL(s3Client *s3.Client, bucket, key string, expireTime time.Duration) (string, error) {
-	presignClient := s3.NewPresignClient(s3Client)
-	object, err := presignClient.PresignGetObject(context.Background(), &s3.GetObjectInput{
-		Bucket: &bucket,
-		Key:    &key,
-	}, s3.WithPresignExpires(expireTime))
-	if err != nil {
-		return "", err
-	}
-	return object.URL, nil
-}
-
-func (cfg *apiConfig) dbVideoToSignedVideo(video database.Video) (database.Video, error) {
-	if video.VideoURL == nil || *video.VideoURL == "" {
-		return video, nil
-	}
-
-	parts := strings.SplitN(*video.VideoURL, ",", 2)
-	if len(parts) != 2 {
-		return video, nil
-	}
-	bucket := parts[0]
-	key := parts[1]
-
-	signedURL, err := generatePresignedURL(cfg.s3Client, bucket, key, 15*time.Minute)
-	if err != nil {
-		return video, err
-	}
-	video.VideoURL = &signedURL
-	return video, nil
 }
