@@ -123,7 +123,7 @@ func (cfg *apiConfig) handlerVideosRetrieve(w http.ResponseWriter, r *http.Reque
 	respondWithJSON(w, http.StatusOK, videos)
 }
 
-func (cfg *apiConfig) getVideoAspectRatio(filepath string) (string, error) {
+func (cfg *apiConfig) getVideoAspectRatioPrefix(filepath string) (string, error) {
 	output, err := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0", filepath).Output()
 	if err != nil {
 		return "", err
@@ -141,20 +141,10 @@ func (cfg *apiConfig) getVideoAspectRatio(filepath string) (string, error) {
 		return "", err
 	}
 
-	gcd := func(a, b int) int {
-		for b != 0 {
-			a, b = b, a%b
-		}
-		return a
+	if w > h {
+		return "landscape", nil
+	} else if w < h {
+		return "portrait", nil
 	}
-	g := gcd(w, h)
-	ratio := fmt.Sprintf("%d:%d", w/g, h/g)
-	switch ratio {
-	case "16:9":
-		return "16:9", nil
-	case "9:16":
-		return "9:16", nil
-	default:
-		return "other", nil
-	}
+	return "other", nil
 }

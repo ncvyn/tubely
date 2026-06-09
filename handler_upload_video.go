@@ -85,6 +85,11 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusInternalServerError, "Couldn't seek temp file", err)
 		return
 	}
+	prefix, err := cfg.getVideoAspectRatioPrefix(tempFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't get video aspect ratio prefix", err)
+		return
+	}
 
 	rand32 := make([]byte, 32)
 	_, err = rand.Read(rand32)
@@ -93,7 +98,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	fileExtension := path.Ext(fileHeader.Filename)
-	videoName := fmt.Sprintf("%s%s", hex.EncodeToString(rand32), fileExtension)
+	videoName := fmt.Sprintf("%s/%s%s", prefix, hex.EncodeToString(rand32), fileExtension)
 
 	cfg.s3Client.PutObject(r.Context(), &s3.PutObjectInput{
 		Bucket:      &cfg.s3Bucket,
